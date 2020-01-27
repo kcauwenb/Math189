@@ -1,0 +1,2 @@
+"0","mydf<-data.frame(Europe=nrow(europe), Africa=nrow(africa), Asia_and_Oceania=nrow(asia_oceania), Americas=nrow(americas))"
+"0","barplot(t(t(as.matrix(mydf))), main=""# of Countries in Each Region"", ylab=""Observations"", xlab=""Region"")"

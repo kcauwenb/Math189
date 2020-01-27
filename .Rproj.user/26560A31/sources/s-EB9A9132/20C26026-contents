@@ -1,0 +1,232 @@
+---
+title: "freedom"
+author: "Kalyani Cauwenberghs"
+date: "1/21/2020"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Read in data and split into groups
+```{r}
+data<-read.csv("hfi_cc_2019.csv")
+
+#find the number of "-"'s in the row pf_rol_procedural
+#sum(data$pf_rol_procedural=="-")
+
+#number of observations for each region
+#summary(data$region)
+
+#add a region column to the data
+data<-cbind(data.frame("REGION" = numeric(nrow(data))),data)
+for(i in 1:nrow(data)){
+  if (data$region[i]=="South Asia"|
+      data$region[i]=="Caucasus & Central Asia"|
+      data$region[i]=="Oceania"|
+      data$region[i]=="East Asia"){
+    data$REGION[i]<-"asia_oceania"
+  } else if (data$region[i]=="Eastern Europe"|
+             data$region[i]=="Western Europe") {
+    data$REGION[i]<-"europe"
+  } else if (data$region[i]=="Middle East & North Africa"|
+             data$region[i]=="Sub-Saharan Africa") {
+    data$REGION[i]<-"africa"
+  } else if (data$region[i]=="North America"|
+             data$region[i]=="Latin America & the Caribbean") {
+    data$REGION[i]<-"americas"
+  }
+}
+
+#split the data into groups
+asia_oceania<-data[data$region=="South Asia"|
+                     data$region=="Caucasus & Central Asia"|
+                     data$region=="Oceania"|
+                     data$region=="East Asia",]
+europe<-data[data$region=="Eastern Europe"|
+             data$region=="Western Europe",]
+africa<-data[data$region=="Middle East & North Africa"|
+             data$region=="Sub-Saharan Africa",]
+americas<-data[data$region=="North America"|
+               data$region=="Latin America & the Caribbean",]
+```
+
+
+
+## Make a barplot of number of observations in each category
+```{r}
+mydf<-data.frame(Europe=nrow(europe), Africa=nrow(africa),
+                 Asia_and_Oceania=nrow(asia_oceania), Americas=nrow(americas))
+barplot(t(t(as.matrix(mydf))), main="# of Countries in Each Region",
+        ylab="Observations", xlab="Region")
+```
+
+## Plot histograms, densities, and boxplots for the continuous variables (hf_score, ef_score, pf_score)
+
+function code
+```{r}
+#see code chunk below for examples
+#l is a list of vectors
+#var is the variable name (for plot title purposes)
+cont_plot<-function(l, var) {
+  #remove the dashes (missing data) from all regions
+  asia_<-as.numeric(as.character(l[[1]][l[[1]]!="-"]))
+  europe_<-as.numeric(as.character(l[[2]][l[[2]]!="-"]))
+  africa_<-as.numeric(as.character(l[[3]][l[[3]]!="-"]))
+  americas_<-as.numeric(as.character(l[[4]][l[[4]]!="-"]))
+
+  #density
+  min<-min(c(asia_,europe_,africa_,americas_))
+  max<-max(c(asia_,europe_,africa_,americas_))
+  plot(density(europe_),xlim=c(min,max), col="red", 
+       main=paste(var, "by Region"), xlab=var)
+  #legend(1,95,legend=c("Europe","Asia_Oceania","Africa","Americas"), 
+  #       fill=c("red","green","blue","purple"))
+  lines(density(asia_),col="green")
+  lines(density(africa_), col = "blue")
+  lines(density(americas_), col = "purple")
+  #legend(1, 95, legend=c("Line 1", "Line 2"),
+  #     col=c("red", "blue"), lty=1:2, cex=0.8)
+  
+  #boxplot
+  boxplot(asia_,europe_,africa_,americas_,
+          names = c("asia_oceania","europe","africa","americas"),
+          main=paste(var, "by Region"), xlab=var)
+  
+  #histogram
+  hist(europe_, main = paste("Europe",var), xlab=var)
+  hist(asia_, main = paste("Asia and Oceania",var), xlab=var)
+  hist(africa_, main = paste("Africa",var), xlab=var)
+  hist(americas_, main = paste("Americas",var), xlab=var)
+}
+```
+
+hf_score
+```{r}
+l<-list(asia_oceania$hf_score,europe$hf_score,africa$hf_score,americas$hf_score)
+cont_plot(l, "Human Freedom Score")
+```
+
+ef_score
+```{r}
+l<-list(asia_oceania$ef_score,europe$ef_score,africa$ef_score,americas$ef_score)
+cont_plot(l, "Economic Freedom Score")
+```
+
+pf_score
+```{r}
+l<-list(asia_oceania$pf_score,europe$pf_score,africa$pf_score,americas$pf_score)
+cont_plot(l, "Political Freedom Score")
+```
+
+
+
+## Plot bar plots for the discrete variables (ef_government_enterprises, ef_government, year, hf_quartile)
+```{r echo=FALSE}
+#quartile: lower = better
+df<-data[,c(1,8)]
+df<-df[df$hf_quartile!="-",]
+asia<-df[which(df$REGION=="asia_oceania"),]
+europe<-df[which(df$REGION=="europe"),]
+africa<-df[which(df$REGION=="africa"),]
+americas<-df[which(df$REGION=="americas"),]
+
+mydf <- data.frame( 
+  One=c(
+    Europe=sum(europe$hf_quartile==1), 
+    Asia_Oceania=sum(asia$hf_quartile==1), 
+    Americas=sum(americas$hf_quartile==1),
+    Africa=sum(africa$hf_quartile==1)
+  ), 
+  Two=c(
+    Europe=sum(europe$hf_quartile==2),
+    Asia_Oceania=sum(asia$hf_quartile==2),
+    Americas=sum(americas$hf_quartile==2),
+    Africa=sum(africa$hf_quartile==2)
+  ), 
+  Three=c(
+    Europe=sum(europe$hf_quartile==3),
+    Asia_Oceania=sum(asia$hf_quartile==3),
+    Americas=sum(americas$hf_quartile==3),
+    Africa=sum(africa$hf_quartile==3)
+  ), 
+  Four=c(
+    Europe=sum(europe$hf_quartile==4),
+    Asia_Oceania=sum(asia$hf_quartile==4),
+    Americas=sum(americas$hf_quartile==4),
+    Africa=sum(africa$hf_quartile==4)
+  ) 
+  )
+barplot(t(as.matrix(mydf)), beside=TRUE, 
+        legend = colnames(mydf), args.legend = list(x="top",cex = .7),
+        main="Region vs. Human Freedom Score Quartile",
+        ylab="Observations",
+        xlab="Region")
+```
+
+```{r echo = FALSE}
+#ef_government_enterprises
+df<-data[,c(1,66)]
+df<-df[df$ef_government_enterprises!="-",]
+asia<-df[which(df$REGION=="asia_oceania"),]
+europe<-df[which(df$REGION=="europe"),]
+africa<-df[which(df$REGION=="africa"),]
+americas<-df[which(df$REGION=="americas"),]
+
+mydf <- data.frame( 
+  Zero=c(
+    Europe=sum(europe$ef_government_enterprises==0), 
+    Asia_Oceania=sum(asia$ef_government_enterprises==0), 
+    Americas=sum(americas$ef_government_enterprises==0),
+    Africa=sum(africa$ef_government_enterprises==0)
+  ), 
+  Two=c(
+    Europe=sum(europe$ef_government_enterprises==2),
+    Asia_Oceania=sum(asia$ef_government_enterprises==2),
+    Americas=sum(americas$ef_government_enterprises==2),
+    Africa=sum(africa$ef_government_enterprises==2)
+  ), 
+  Four=c(
+    Europe=sum(europe$ef_government_enterprises==4),
+    Asia_Oceania=sum(asia$ef_government_enterprises==4),
+    Americas=sum(americas$ef_government_enterprises==4),
+    Africa=sum(africa$ef_government_enterprises==4)
+  ), 
+  Six=c(
+    Europe=sum(europe$ef_government_enterprises==6),
+    Asia_Oceania=sum(asia$ef_government_enterprises==6),
+    Americas=sum(americas$ef_government_enterprises==6),
+    Africa=sum(africa$ef_government_enterprises==6)
+  ), 
+  Seven=c(
+    Europe=sum(europe$ef_government_enterprises==7),
+    Asia_Oceania=sum(asia$ef_government_enterprises==7),
+    Americas=sum(americas$ef_government_enterprises==7),
+    Africa=sum(africa$ef_government_enterprises==7)
+  ), 
+  Eight=c(
+    Europe=sum(europe$ef_government_enterprises==8),
+    Asia_Oceania=sum(asia$ef_government_enterprises==8),
+    Americas=sum(americas$ef_government_enterprises==8),
+    Africa=sum(africa$ef_government_enterprises==8)
+  ), 
+  Ten=c(
+    Europe=sum(europe$ef_government_enterprises==10),
+    Asia_Oceania=sum(asia$ef_government_enterprises==10),
+    Americas=sum(americas$ef_government_enterprises==10),
+    Africa=sum(africa$ef_government_enterprises==10)
+  ) 
+  )
+barplot(t(as.matrix(mydf)), beside=TRUE, 
+        legend = colnames(mydf), 
+        args.legend = list(x="top",cex = .7),
+        main="Region vs. Government Enterprises",
+        ylab="Observations",
+        xlab="Region")
+
+
+```
+
+
+

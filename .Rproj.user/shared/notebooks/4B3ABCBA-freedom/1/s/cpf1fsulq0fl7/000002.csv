@@ -1,0 +1,2 @@
+"0","l<-list(asia_oceania$pf_score,europe$pf_score,africa$pf_score,americas$pf_score)"
+"0","cont_plot(l, ""Political Freedom Score"")"

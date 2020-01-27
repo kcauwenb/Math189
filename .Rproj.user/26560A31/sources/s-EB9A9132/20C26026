@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1579674805731.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "2224122395",
+    "id" : "20C26026",
+    "lastKnownWriteTime" : 1580021203,
+    "last_content_update" : 1580101326819,
+    "path" : "~/Desktop/MATH_189/freedom/freedom.Rmd",
+    "project_path" : "freedom.Rmd",
+    "properties" : {
+        "cursorPosition" : "0,0",
+        "last_setup_crc32" : "",
+        "scrollLine" : "0"
+    },
+    "relative_order" : 1,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

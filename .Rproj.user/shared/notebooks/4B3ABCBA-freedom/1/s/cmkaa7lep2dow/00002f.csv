@@ -1,0 +1,2 @@
+"0","l<-list(asia_oceania$hf_score,europe$hf_score,africa$hf_score,americas$hf_score)"
+"0","cont_plot(l, ""Human Freedom Score"")"
