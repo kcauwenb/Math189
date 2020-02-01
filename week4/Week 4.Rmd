@@ -44,18 +44,12 @@ binom500<-function(p){
               avg_var,true_CI_prop,
               avg_CI_length))
 }
-
-p0.1<-binom500(0.1)
-p0.2<-binom500(0.2)
-p0.3<-binom500(0.3)
-p0.4<-binom500(0.4)
-p0.5<-binom500(0.5)
-
-final<-data.frame(p0.1,
-           p0.2,
-           p0.3,
-           p0.4,
-           p0.5, 
+final<-data.frame(
+           binom500(0.1),
+           binom500(0.2),
+           binom500(0.3),
+           binom500(0.4),
+           binom500(0.5), 
            row.names = 
              c("avg p_hats",
                "emp variance",
