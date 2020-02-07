@@ -1,21 +1,18 @@
 ---
-title: "Untitled"
+title: "Code"
 author: "Kalyani Cauwenberghs"
 date: "1/31/2020"
-output: html_document
+output:
+  pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-```{r}
-#function that will return the 5 things she asked for in a list, given a p
-#usage example: we want p_hat for p=0.1
-  #p0.1<-binom500(0.1)
-  #p0.1$p_hat
-
-binom500<-function(p){
+```{r eval=FALSE}
+binom_sim<-function(p){
   #simulate 500 bin(100,p)
   sims<-rbinom (500, 100, p)
   p_hats<-sims/100
@@ -26,7 +23,6 @@ binom500<-function(p){
   #empirical variance of the p_hat’s
   emp_var<-var(p_hats)
   
-  #1 var estimator for each p_hat
   var_est<-p_hats*(1-p_hats)/100
   #avg. estimated variances of the p_hat’s
   avg_var<-mean(var_est)
@@ -40,24 +36,17 @@ binom500<-function(p){
   #avg. length of the 95% CI’s
   avg_CI_length<-mean(CI[,2]-CI[,1])
   
-  return(c(avg_p_hats,emp_var,
+  return(data.frame(c(avg_p_hats,emp_var,
               avg_var,true_CI_prop,
-              avg_CI_length))
+              avg_CI_length), row.names =
+                c("avg_p_hats","emp_var",
+              "avg_var","true_CI_prop",
+              "avg_CI_length")))
 }
-final<-data.frame(
-           binom500(0.1),
-           binom500(0.2),
-           binom500(0.3),
-           binom500(0.4),
-           binom500(0.5), 
-           row.names = 
-             c("avg p_hats",
-               "emp variance",
-               "avg variance",
-               "prop CI's contain p",
-               "avg CI length")
-           )
+final<-data.frame(binom_sim(0.1),binom_sim(0.2),binom_sim(0.3),
+                  binom_sim(0.4),binom_sim(0.5))
 colnames(final)<-c("p=0.1","p=0.2","p=0.3","p=0.4","p=0.5")
+
 knitr::kable(final)
 ```
 

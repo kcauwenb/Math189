@@ -1,0 +1,32 @@
+---
+title: "week 6"
+author: "Kalyani Cauwenberghs"
+date: "2/7/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+Research question:
+Hypothesis: Let p = political freedom score/(pfs+efs). 
+H_0: p in asia is the same as p in europe
+H_1: p in asia is diff from p in europe
+```{r}
+data<-read.csv("hfi_cc_2019.csv")
+data<-data[data$year=="2017",]
+
+asia_oceania<-data[data$region=="South Asia"|
+                     data$region=="Caucasus & Central Asia"|
+                     data$region=="Oceania"|
+                     data$region=="East Asia",]
+europe<-data[data$region=="Eastern Europe"|
+             data$region=="Western Europe",]
+e<-((as.numeric(europe$pf_score))/(as.numeric(europe$pf_score)+as.numeric(europe$ef_score)))
+a<-((as.numeric(asia_oceania$pf_score))/(as.numeric(asia_oceania$pf_score)+as.numeric(asia_oceania$ef_score)))
+p_europe<-mean(e)
+p_asia<-mean(a)
+res <- prop.test(x = c(p_europe, p_asia), n = c(nrow(europe), nrow(asia_oceania)))
+
+```
+
