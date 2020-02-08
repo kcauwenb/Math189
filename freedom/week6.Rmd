@@ -22,11 +22,41 @@ asia_oceania<-data[data$region=="South Asia"|
                      data$region=="East Asia",]
 europe<-data[data$region=="Eastern Europe"|
              data$region=="Western Europe",]
-e<-((as.numeric(europe$pf_score))/(as.numeric(europe$pf_score)+as.numeric(europe$ef_score)))
-a<-((as.numeric(asia_oceania$pf_score))/(as.numeric(asia_oceania$pf_score)+as.numeric(asia_oceania$ef_score)))
+e_pf<-as.numeric(europe$pf_score)
+e_ef<-as.numeric(europe$ef_score)
+e<-((e_pf)/(e_pf+e_ef))
+a_pf<-as.numeric(asia_oceania$pf_score)
+a_ef<-as.numeric(asia_oceania$ef_score)
+a<-((a_pf)/(a_pf+a_ef))
 p_europe<-mean(e)
 p_asia<-mean(a)
-res <- prop.test(x = c(p_europe, p_asia), n = c(nrow(europe), nrow(asia_oceania)))
+benchmark<-mean(c(e,a))
+proportions<-data.frame("asia"=c(sum(a>benchmark),sum(a<benchmark)),
+                        "europe"=c(sum(e>benchmark),sum(e<benchmark)),
+                        row.names = c("above_mean", "below_mean"))
+```
+Let p = proportion of countries with greater than mean (across all of europe and asia) pf/(ef+pf).
+```{r}
+pe<-proportions[1,2]/sum(proportions$europe)
+pa<-proportions[1,1]/sum(proportions$asia)
 
+#confidence interval
+est<-pe-pa
+SE<-sqrt((pa*(1-pa)/sum(proportions$asia))+(pe*(1-pe)/sum(proportions$europe)))
+CI<-c(est-qnorm(0.975)*SE,est+qnorm(0.975)*SE)
+
+
+z<-est/SE
+#percentile
+pnorm(z)
+
+#odds ratio
+OR<-(pe*(1-pa))/(pa*(1-pe))
+
+#chisq test
+chisq.test(proportions)
+
+#fischer
+fisher.test(proportions)
 ```
 
