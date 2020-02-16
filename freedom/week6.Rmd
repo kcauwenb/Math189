@@ -3,8 +3,8 @@ title: "Week_6"
 author: "Kalyani Cauwenberghs"
 date: "2/14/2020"
 output:
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -16,7 +16,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ##Part 2
 
 ##Part 3
-Describe the distribution of the outcome variable, identify a main predictor that you’re interested in studying its effect on the outcome
+#a.) Describe the distribution of the outcome variable, identify a main predictor that you’re interested in studying its effect on the outcome
 ```{r}
 #read in dataset
 data<-read.csv("hfi_cc_2019.csv")
@@ -30,42 +30,67 @@ data<-data[data$year=="2017",]
 #distribution of outcome aka EF
 hist(as.numeric(as.character(data$ef_score)))
 ```
+
 Our outcome (EF score) is normal but left skewed, mean around 6.5, median around 7.
 Our main predictor is PF score.
+
 ```{r}
 hist(as.numeric(as.character(data$pf_score)))
 ```
 
 
 
-Identify other variables (i.e. predictors, often called covariates) that might be related to the outcome or the main predictor, discuss these variables in the context of part 2 above of this assignment
-
-political freedom variables can be our predictors.
-
-pf_rol
-
-pf_ss
-
-pf_movement
-
-pf_expression
-
-pf_identity
+#b.) Identify other variables (i.e. predictors, often called covariates) that might be related to the outcome or the main predictor discuss these variables in the context of part 2 above of this assignment.
 
 
-Carry out univariate logistic regression of the outcome on each of the predictors including the main predictor, interpret the results in terms of odds ratio etc.
+- The variables that determine political freedom can be our predictors for economic freedom because they are not directly used in the calculation of economic freedom (pf_rol, pf_ss, pf_movement, pf_expression, pf_identity).
+- TODO: discuss these variables in the context of part 2 above of this assignment
+
+
+#c.) Carry out univariate logistic regression of the outcome on each of the predictors including the main predictor, interpret the results in terms of odds ratio etc.
 
 ```{r}
-#predictor: pf_rol, outcome: ef_score
+#make the columns into numerics
 pf_rol<-as.numeric(as.character(data$pf_rol))
+pf_ss<-as.numeric(as.character(data$pf_ss))
+pf_movement<-as.numeric(as.character(data$pf_movement))
+pf_expression<-as.numeric(as.character(data$pf_expression))
+pf_identity<-as.numeric(as.character(data$pf_identity))
 ef_score<-as.numeric(as.character(data$ef_score))
-plot(pf_rol,ef_score)
+#predictor: pf_rol, outcome: ef_score
+rol<-glm(ef_score~pf_rol)
+rol$coefficients
+#predictor: pf_ss, outcome: ef_score
+ss<-glm(ef_score~pf_ss)
+ss$coefficients
+#predictor: pf_movement, outcome: ef_score
+movement<-glm(ef_score~pf_movement)
+movement$coefficients
+#predictor: pf_expression, outcome: ef_score
+expression<-glm(ef_score~pf_expression)
+expression$coefficients
+#predictor: pf_identity, outcome: ef_score
+identity<-glm(ef_score~pf_identity)
+identity$coefficients
 ```
 
+TODO: interpret the results in terms of conditional odds ratio etc.
 
 
 
+#d.) Fit a multiple logistic regression model by including more than one predictors, interpret the results in terms of conditional odds ratio etc.
 
-Fit a multiple logistic regression model by including more than one predictors, interpret the results in terms of conditional odds ratio etc.
+```{r}
+reg<-glm(ef_score~pf_rol+pf_ss+pf_movement+
+           pf_expression+pf_identity)
+```
+
+Coefficients:
+
+```{r}
+reg$coefficients
+```
+
+TODO: interpret the results in terms of conditional odds ratio etc.
 
 
