@@ -1,62 +1,71 @@
 ---
-title: "week 6"
+title: "Week_6"
 author: "Kalyani Cauwenberghs"
-date: "2/7/2020"
-output: html_document
+date: "2/14/2020"
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
-Research question:
-Hypothesis: Let p = political freedom score/(pfs+efs). 
-H_0: p in asia is the same as p in europe
-H_1: p in asia is diff from p in europe
+
+##Part 1
+
+##Part 2
+
+##Part 3
+Describe the distribution of the outcome variable, identify a main predictor that you’re interested in studying its effect on the outcome
 ```{r}
+#read in dataset
 data<-read.csv("hfi_cc_2019.csv")
 data<-data[data$year=="2017",]
+#predictor: political freedom
+#outcome: economic freedom
+#make sure both columns have no missing data
+#sum(as.character(data$pf_score)=="-")==0
+#sum(as.character(data$ef_score)=="-")==0
 
-asia_oceania<-data[data$region=="South Asia"|
-                     data$region=="Caucasus & Central Asia"|
-                     data$region=="Oceania"|
-                     data$region=="East Asia",]
-europe<-data[data$region=="Eastern Europe"|
-             data$region=="Western Europe",]
-e_pf<-as.numeric(europe$pf_score)
-e_ef<-as.numeric(europe$ef_score)
-e<-((e_pf)/(e_pf+e_ef))
-a_pf<-as.numeric(asia_oceania$pf_score)
-a_ef<-as.numeric(asia_oceania$ef_score)
-a<-((a_pf)/(a_pf+a_ef))
-p_europe<-mean(e)
-p_asia<-mean(a)
-benchmark<-mean(c(e,a))
-proportions<-data.frame("asia"=c(sum(a>benchmark),sum(a<benchmark)),
-                        "europe"=c(sum(e>benchmark),sum(e<benchmark)),
-                        row.names = c("above_mean", "below_mean"))
+#distribution of outcome aka EF
+hist(as.numeric(as.character(data$ef_score)))
 ```
-Let p = proportion of countries with greater than mean (across all of europe and asia) pf/(ef+pf).
+Our outcome (EF score) is normal but left skewed, mean around 6.5, median around 7.
+Our main predictor is PF score.
 ```{r}
-pe<-proportions[1,2]/sum(proportions$europe)
-pa<-proportions[1,1]/sum(proportions$asia)
-
-#confidence interval
-est<-pe-pa
-SE<-sqrt((pa*(1-pa)/sum(proportions$asia))+(pe*(1-pe)/sum(proportions$europe)))
-CI<-c(est-qnorm(0.975)*SE,est+qnorm(0.975)*SE)
-
-
-z<-est/SE
-#percentile
-pnorm(z)
-
-#odds ratio
-OR<-(pe*(1-pa))/(pa*(1-pe))
-
-#chisq test
-chisq.test(proportions)
-
-#fischer
-fisher.test(proportions)
+hist(as.numeric(as.character(data$pf_score)))
 ```
+
+
+
+Identify other variables (i.e. predictors, often called covariates) that might be related to the outcome or the main predictor, discuss these variables in the context of part 2 above of this assignment
+
+political freedom variables can be our predictors.
+
+pf_rol
+
+pf_ss
+
+pf_movement
+
+pf_expression
+
+pf_identity
+
+
+Carry out univariate logistic regression of the outcome on each of the predictors including the main predictor, interpret the results in terms of odds ratio etc.
+
+```{r}
+#predictor: pf_rol, outcome: ef_score
+pf_rol<-as.numeric(as.character(data$pf_rol))
+ef_score<-as.numeric(as.character(data$ef_score))
+plot(pf_rol,ef_score)
+```
+
+
+
+
+
+Fit a multiple logistic regression model by including more than one predictors, interpret the results in terms of conditional odds ratio etc.
+
 
