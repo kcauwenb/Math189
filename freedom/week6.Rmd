@@ -1,5 +1,5 @@
 ---
-title: "Week_6"
+title: "Week_7"
 author: "Kalyani Cauwenberghs"
 date: "2/14/2020"
 output:
@@ -11,61 +11,93 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r functions, echo=FALSE}
+plot_logistic<-function(r, predictor){
+  b0<-r$coefficients[1]
+  b1<-r$coefficients[2]
+  min<-min(predictor)
+  max<-max(predictor)
+  x<-seq(min,max,0.01)
+  func<-(exp(b0+b1*x))/(1+exp(b0+b1*x))
+  lines(x,func)
+}
+```
+
 ##Part 1
-#Group 7:
-Nice galaxy theme background
+#Group 9:
+Good job on explaining the dataset, informing us on how many rows and columns there are. Also it is good that you shared the numerical, categorical, and miscellaneous variables
 
 
-Somewhat confusing topic, so far I don’t understand it too well
+How did you all end up using the miscellaneous variables? In what calculations are they used? I am not very sure of how these variables are useful
 
 
-What are the transposed table’s column names? The table before table 1.
+The box plots were good for showing us the variables of interests, easy way to show the outliers and average values (median)
 
 
-Your group tells us what you all did to the columns however we are not really sure what each column means.. In addition, what does the value of each column mean in context?
+Good color contrast on the slides using a dark background followed with a light colored text, also the font was fine and not too distracting
 
 
- I think your group did a good job trying to explain the context of stars and celestial bodies, however I think the topic is still a bit confusing with such limited background, even if the data and analysis is sufficient
+Professor note: Include more categorical variables (language, origin, etc) → improve the R2
 
 
-Experimental design: Your parameters should not include estimates. Just name the parameters (p1, p2) and make clear that the numbers are estimates (p1 hat, p2 hat)
+Great example of logistic regression that included a sigmoid curve
 
 
-CI for risk ratio should contain 1 for the  difference to be insignificant
+Good explanation of what you are trying to do. Good job condensing the information taught in lecture
 
 
-Explanation for chi square distribution was really long and unnecessary. Although it was probably a good introduction for those who had background info.
+Good job explaining statistical terms such as wald statistics, univariate model, etc.
 
 
-It is good that you explained between Fisher and Chi-Squared
+Recommend that you calculate the for each observation and use that to compare in your analysis
 
 
-#Group 8:
-
-Good start by explaining what each column signifies and represents.. Also good job for telling us which columns you dropped and explaining the reasons for why you dropped those respective columns
+Provide the odds ratio for univariate regressions
 
 
-The frequency of sighting plot where there are a lot of colored bars is a bit hard to look at and compare between the bars. The colors have good contrast but the plot is too busy and it is hard for the eyes to navigate through the plot
+1.0 CL (confidence level). 1.0 = 1 star (alpha = 0.05). Specify the alphas next time.
 
 
-It would be a good idea to plot relative proportions rather than number of observations for your bar plots since pre-2000 always has less observations than post-2000.
+What was the point of including interactions in the presentation without having done any interactions things in your data?
 
 
-Good idea to combine the “other” data as a category along with the top 5.
+You should consider looking at the fractions for the following week
+
+#Group 10:
+I would recommend not just staring at the computer or the slides and try to make more eye contact with the audience
 
 
-Why does your H0 have an approx. equal sign?
-It should be equal bc you are talking about parameters, which are set in stone
-Why use a t-test? This is for comparing 2 means. We want to compare 2 proportions, which is the homework assignment.
+Introduction is a bit too long and includes unnecessary stuff. Implies lack of understanding of the subject matter. 
 
 
-It is good that you explained Fisher and Chi-squared and explained why you could reject the null hypothesis for both case, however, make sure you understand the variables, the IID parameters
+Your group should focus more on the statistical concepts covered in class for the week, such as univariate models, multivariate models, etc.
 
 
-Write your formulas using the equation editor. I can’t read them
+Why is the description of data cleaning necessary? Perhaps more information about how the missing ness would affect the analysis is needed. 
 
 
-Perhaps consider using smaller portions of datasets, take random samples of large datasets as runtime error or memory errors may occur
+High pb = higher than 120 systolic, higher than 80 diastolic
+
+
+Missing description about colinearity calculations
+
+
+You can standardize the variance to minimize the number of calculations that you need to do
+
+
+The univariate model and interpretation section is informative and useful, but get to these points quicker
+
+
+Overall, the data cleaning and selection of variables (?) and discussion of collinearity took way too much time
+
+
+Interpretation and odds ratios have very good real life interpretations (an x increase in this would predict a y increase in that)
+
+
+“One unit increase”: should provide units (cm, etc.)
+
+
+The visuals and images shown in the slides for multiple logistic regression models and for univariate models are quite difficult to look at. It is not the most visually appealing images to demonstrate your findings
 
 
 ##Part 2
@@ -92,16 +124,20 @@ Measurement errors affect prediction in biased ways as they affect the estimates
 data<-read.csv("hfi_cc_2019.csv")
 data<-data[data$year=="2017",]
 #predictor: political freedom
-#outcome: economic freedom
+#outcome: economic freedom (binary)
 #make sure both columns have no missing data
 #sum(as.character(data$pf_score)=="-")==0
-#sum(as.character(data$ef_score)=="-")==0
-
-#distribution of outcome aka EF
-hist(as.numeric(as.character(data$ef_score)), main = "Economic Freedom Score", xlab = "EF Score")
+#sum(as.character(data$ef_score_binary)=="-")==0
+ef_score<-as.numeric(as.character(data$ef_score))
+mean_ef_score<-mean(ef_score)
+ef_score_binary<-numeric(length(ef_score))
+ef_score_binary[ef_score>mean_ef_score]<-1
+ef_score_binary[ef_score<=mean_ef_score]<-0
+#plot EF binary
+barplot(table(ef_score_binary))
 ```
 
-Our outcome (EF score) is normal but left skewed, mean around 6.5, median around 7.
+Our outcome is binary economic freedom score (1 if above average and 0 if average or below). Slightly more observations are above the mean than below.
 Our main predictor is PF score.
 
 ```{r chunk2, echo=FALSE}
@@ -125,28 +161,39 @@ pf_rol<-as.numeric(as.character(data$pf_rol))
 pf_ss<-as.numeric(as.character(data$pf_ss))
 pf_movement<-as.numeric(as.character(data$pf_movement))
 pf_score<-as.numeric(as.character(data$pf_score))
-ef_score<-as.numeric(as.character(data$ef_score))
-#predictor: pf_rol, outcome: ef_score
-rol<-glm(ef_score~pf_rol)
+print("predictor: pf_rol, outcome: ef_score_binary")
+rol<-glm(ef_score_binary~pf_rol, family = binomial)
 rol$coefficients
-#predictor: pf_ss, outcome: ef_score
-ss<-glm(ef_score~pf_ss)
+plot(pf_rol,ef_score_binary)
+plot_logistic(rol,pf_rol)
+
+print("predictor: pf_ss, outcome: ef_score_binary")
+ss<-glm(ef_score_binary~pf_ss, family = binomial)
 ss$coefficients
-#predictor: pf_movement, outcome: ef_score
-movement<-glm(ef_score~pf_movement)
+plot(pf_ss,ef_score_binary)
+plot_logistic(ss,pf_ss)
+
+print("predictor: pf_movement, outcome: ef_score_binary")
+movement<-glm(ef_score_binary~pf_movement, family = binomial)
 movement$coefficients
-#predictor: pf_score, outcome: ef_score
-score<-glm(ef_score~pf_score)
+plot(pf_movement,ef_score_binary)
+plot_logistic(movement,pf_movement)
+
+print("predictor: pf_score, outcome: ef_score_binary")
+score<-glm(ef_score_binary~pf_score, family = binomial)
 score$coefficients
+plot(pf_score,ef_score_binary)
+plot_logistic(score,pf_score)
 ```
 
 
 
 
-#d.) Fit a multiple logistic regression model by including more than one predictors, interpret the results in terms of conditional odds ratio etc.
+#d.) Use one of the stepwise procedures we talked about, together with computing the generalized R-squared and AIC for each model considered during the process, to arrive at a ‘final’ multiple logistic regression model. Consider interaction terms also.  Interpret the results from your final model in the context of the research question that you are trying to answer.
 
 ```{r chunk4, echo=FALSE}
-reg<-glm(ef_score~pf_rol+pf_ss+pf_movement)
+#TODO: change
+reg<-glm(ef_score_binary~pf_rol+pf_ss+pf_movement, family=binomial())
 ```
 
 Coefficients:
@@ -155,7 +202,12 @@ Coefficients:
 reg$coefficients
 ```
 
+#e.) write a paragraph discussing limitations from your data source, assumptions, approaches etc. as applicable. For those that the grader marked comments about the i.i.d. assumption from week 5 homework, be sure to including discussion on those.
 
-```{r ref.label=c("chunk1","chunk2","chunk3","chunk4","chunk5"), echo=TRUE, eval=FALSE}
+TODO
+
+#Code:
+
+```{r ref.label=c("functions","chunk1","chunk2","chunk3","chunk4","chunk5"), echo=TRUE, eval=FALSE}
 ```
 
