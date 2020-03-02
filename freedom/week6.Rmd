@@ -12,6 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ```{r functions, echo=FALSE}
+#function code
 plot_logistic<-function(r, predictor){
   b0<-r$coefficients[1]
   b1<-r$coefficients[2]
@@ -21,10 +22,19 @@ plot_logistic<-function(r, predictor){
   func<-(exp(b0+b1*x))/(1+exp(b0+b1*x))
   lines(x,func)
 }
-```
 
+r2log<-function(glm_obj) {
+  glm_null<-glm(ef_score_binary~1, family = binomial())
+  #likelihood ratio test statistic
+  t<-2*(logLik(glm_obj)-logLik(glm_null))/162
+  r2<-1-exp(-t)
+  return(r2)
+}
+
+```
+#Week 7
 ##Part 1
-#Group 9:
+###Group 9:
 Good job on explaining the dataset, informing us on how many rows and columns there are. Also it is good that you shared the numerical, categorical, and miscellaneous variables
 
 
@@ -63,7 +73,7 @@ What was the point of including interactions in the presentation without having 
 
 You should consider looking at the fractions for the following week
 
-#Group 10:
+###Group 10:
 I would recommend not just staring at the computer or the slides and try to make more eye contact with the audience
 
 
@@ -101,8 +111,8 @@ The visuals and images shown in the slides for multiple logistic regression mode
 
 
 ##Part 2
-#Research and write about the use of regression models in the context of 
-#a.) prediction, 
+###Research and write about the use of regression models in the context of 
+###a.) prediction, 
 - In regards to prediction, regression models help to relate comparisons between units. 
 - When applying regression models for prediction, the goal is to develop a formula for making predictions about the dependent variable, based on the observed values of the independent variable
 - It seems that prediction is the primary use of regression models outside of academia and research. This is especially true in the wake of big data and private industries using predictive analysis to help guide their decision making. 
@@ -110,7 +120,7 @@ The visuals and images shown in the slides for multiple logistic regression mode
 - Multicollinearity is not as big of a concern for prediction because in prediction, we do not care about the individual coefficients so the multicollinearity can be tolerated more. 
 Measurement errors affect prediction in biased ways as they affect the estimates of regression coefficients.
 
-#b.) causal inference on effect of a variable on the outcome.
+###b.) causal inference on effect of a variable on the outcome.
 - Regression context in the context of causal inference helps to address comparisons of different treatments if applied to the same units. 
 - When applying regression models for causal inference, the independent variables are regarded as the causes for the dependent variables. The goal of causal inference studies is to determine whether a particular independent variable actually affects the dependent variable and to estimate the magnitude of that effect. 
 - A major goal is to get unbiased estimate of the regression coefficients.
@@ -118,7 +128,12 @@ Measurement errors affect prediction in biased ways as they affect the estimates
 - Multicollinearity is a major concern for causal inference because when two variables are correlated, it can be difficult to get reliable estimates of the coefficients.
 
 ##Part 3
-#a.) Describe the distribution of the outcome variable, identify a main predictor that you’re interested in studying its effect on the outcome
+###Description of data set
+Purpose: measures the level of human freedom (“absence of coercive constraint”)
+Observations: 162 countries
+Variables: measures of human freedom. Human Freedom score is the total score for each country that is determined by political and economic freedom scores, which are each determined by their own respective subscores like rule of law or economic regulation. All these categories and subcategories are variables in this dataset, along with country/region/year.
+
+###a.) Describe the distribution of the outcome variable, identify a main predictor that you’re interested in studying its effect on the outcome
 ```{r chunk1, echo=FALSE}
 #read in dataset
 data<-read.csv("hfi_cc_2019.csv")
@@ -138,7 +153,7 @@ barplot(table(ef_score_binary))
 ```
 
 Our outcome is binary economic freedom score (1 if above average and 0 if average or below). Slightly more observations are above the mean than below.
-Our main predictor is PF score.
+Our main predictor is political freedom score.
 
 ```{r chunk2, echo=FALSE}
 hist(as.numeric(as.character(data$pf_score)), main = "Political Freedom Score", xlab = "PF Score")
@@ -146,14 +161,14 @@ hist(as.numeric(as.character(data$pf_score)), main = "Political Freedom Score", 
 
 
 
-#b.) Identify other variables (i.e. predictors, often called covariates) that might be related to the outcome or the main predictor discuss these variables in the context of part 2 above of this assignment.
+###b.) Identify other variables (i.e. predictors, often called covariates) that might be related to the outcome or the main predictor discuss these variables in the context of part 2 above of this assignment.
 
 
 - The variables that determine political freedom can be used as covariates for economic freedom because they are not directly used in the calculation of economic freedom (pf_rol, pf_ss, pf_movement), but are correlated, which we proved in previous week's assignments.
 - In this case, regression of these values will likely result in a line with a high goodness-of-fit, but with accuracy values should be lower than the regression using PF_score. This is due to the fact that PF is a more general variable than the various pf subcategories that we are using as covariables.
 
 
-#c.) Carry out univariate logistic regression of the outcome on each of the predictors including the main predictor, interpret the results in terms of odds ratio etc.
+###c.) Carry out univariate logistic regression of the outcome on each of the predictors including the main predictor, interpret the results in terms of odds ratio etc.
 
 ```{r chunk3, echo=FALSE}
 #make the columns into numerics
@@ -166,6 +181,8 @@ rol<-glm(ef_score_binary~pf_rol, family = binomial)
 rol$coefficients
 plot(pf_rol,ef_score_binary)
 plot_logistic(rol,pf_rol)
+#odds ratio
+OR<-exp(rol$coefficients[2])
 
 print("predictor: pf_ss, outcome: ef_score_binary")
 ss<-glm(ef_score_binary~pf_ss, family = binomial)
@@ -185,26 +202,93 @@ score$coefficients
 plot(pf_score,ef_score_binary)
 plot_logistic(score,pf_score)
 ```
+TODO: interpret the results in terms of odds ratio etc.
 
 
 
+###d.) Use one of the stepwise procedures we talked about, together with computing the generalized R-squared and AIC for each model considered during the process, to arrive at a ‘final’ multiple logistic regression model. Consider interaction terms also.  Interpret the results from your final model in the context of the research question that you are trying to answer.
 
-#d.) Use one of the stepwise procedures we talked about, together with computing the generalized R-squared and AIC for each model considered during the process, to arrive at a ‘final’ multiple logistic regression model. Consider interaction terms also.  Interpret the results from your final model in the context of the research question that you are trying to answer.
+We will use forwards stepwise selection.
+
+No interaction terms:
 
 ```{r chunk4, echo=FALSE}
-#TODO: change
-reg<-glm(ef_score_binary~pf_rol+pf_ss+pf_movement, family=binomial())
+p_val<-0.05
+print("Already ran univariate regression on each predictor.")
+print("Now time to compare p-values:")
+print("p-value rol")
+print(coef(summary(rol))[,4])
+print("p-value ss")
+print(coef(summary(ss))[,4])
+print("p-value movement")
+print(coef(summary(movement))[,4])
+print("They all have p-value below our threshold, 0.05.")
+print("pf_rol has the lowest p-value among all the predictors,")
+print("so we will make this the first variable.")
+print("###Model 1:")
+print("##coefficients: ")
+print(rol$coefficients)
+cat("##AIC: ", rol$aic)
+cat("##generalized R-squared: ", r2log(rol))
+print("Now we will regress ef_score_binary with pf_rol and one")
+print("other variable for each other variable (pf_movement and pf_ss).")
+print("p-value rol ss")
+print(coef(summary(glm(ef_score_binary~pf_rol+pf_ss, family = binomial())))[,4])
+print("p-value rol movement")
+print(coef(summary(glm(ef_score_binary~pf_rol+pf_movement, family = binomial())))[,4])
+print("The p-value for pf_ss is above threshold, so we will  eliminate it.")
+print("###Model 2 (final model):")
+m2<-glm(ef_score_binary~pf_rol+pf_movement, family = binomial())
+print("##coefficients: ")
+print(m2$coefficients)
+cat("##AIC: ", m2$aic)
+cat("##generalized R-squared: ", r2log(m2))
 ```
 
-Coefficients:
+Interaction terms:
+we will consider the following interaction terms:
+  - pf_rol x pf_ss
+  - pf_rol x pf_movement
+  - pf_ss x pf_movement
+  - pf_rol x pf_ss x pf_movement
+```{r chunk6, echo=FALSE}
 
-```{r chunk5, echo=FALSE}
-reg$coefficients
+
 ```
 
-#e.) write a paragraph discussing limitations from your data source, assumptions, approaches etc. as applicable. For those that the grader marked comments about the i.i.d. assumption from week 5 homework, be sure to including discussion on those.
+
+###e.) write a paragraph discussing limitations from your data source, assumptions, approaches etc. as applicable. For those that the grader marked comments about the i.i.d. assumption from week 5 homework, be sure to including discussion on those.
 
 TODO
+
+#Week 8:
+##Part 1:
+###Group 11: TODO
+###Group 12: TODO
+##Part 2:
+###a) Perform prediction on the whole data set, plot the ROC curve and compute the AUC;
+
+```{r}
+
+```
+
+
+###b) Use a randomly chosen 90% of your observations as training sample to fit the final model (if your data set is too small, you may reduce your final model to a smaller one this week), and use the rest 10% as test sample to compute the out-of-sample AUC;
+
+```{r}
+
+```
+
+
+###c) Now instead of test-training sample, carry out 10-fold CV with 10 repetitions to estimate the out-of-sample AUC;
+
+```{r}
+
+```
+
+
+###d) Comment on your results.
+
 
 #Code:
 
