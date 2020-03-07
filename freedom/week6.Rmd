@@ -30,7 +30,11 @@ r2log<-function(glm_obj) {
   r2<-1-exp(-t)
   return(r2)
 }
-
+#required package
+#install.packages("pROC")
+library("pROC")
+#install.packages("cvTools")
+library(cvTools)
 ```
 #Week 7
 ##Part 1
@@ -132,6 +136,19 @@ Measurement errors affect prediction in biased ways as they affect the estimates
 Purpose: measures the level of human freedom (“absence of coercive constraint”)
 Observations: 162 countries
 Variables: measures of human freedom. Human Freedom score is the total score for each country that is determined by political and economic freedom scores, which are each determined by their own respective subscores like rule of law or economic regulation. All these categories and subcategories are variables in this dataset, along with country/region/year.
+The variables we will use:
+
+ef_score: economic freedom score
+
+ef_score_binary: 1 if the above is above avg, 0 if not.
+
+pf_score: political freesom score
+
+pf_rol: rule of law, subscore of pf_score
+
+pf_ss: security and safety, subscore of pf_score
+
+pf_movement: movement, subscore of pf_score
 
 ###a.) Describe the distribution of the outcome variable, identify a main predictor that you’re interested in studying its effect on the outcome
 ```{r chunk1, echo=FALSE}
@@ -181,29 +198,34 @@ rol<-glm(ef_score_binary~pf_rol, family = binomial)
 rol$coefficients
 plot(pf_rol,ef_score_binary)
 plot_logistic(rol,pf_rol)
-#odds ratio
-OR<-exp(rol$coefficients[2])
+print("odds ratio:")
+print(exp(rol$coefficients[2]))
 
 print("predictor: pf_ss, outcome: ef_score_binary")
 ss<-glm(ef_score_binary~pf_ss, family = binomial)
 ss$coefficients
 plot(pf_ss,ef_score_binary)
 plot_logistic(ss,pf_ss)
+print("odds ratio:")
+print(exp(ss$coefficients[2]))
 
 print("predictor: pf_movement, outcome: ef_score_binary")
 movement<-glm(ef_score_binary~pf_movement, family = binomial)
 movement$coefficients
 plot(pf_movement,ef_score_binary)
 plot_logistic(movement,pf_movement)
+print("odds ratio:")
+print(exp(movement$coefficients[2]))
 
 print("predictor: pf_score, outcome: ef_score_binary")
 score<-glm(ef_score_binary~pf_score, family = binomial)
 score$coefficients
 plot(pf_score,ef_score_binary)
 plot_logistic(score,pf_score)
+print("odds ratio:")
+print(exp(score$coefficients[2]))
 ```
-TODO: interpret the results in terms of odds ratio etc.
-
+Interpretation of odds-ratio: a one unit increase in the predictor predicts that the odds of ef_score being 1 gets multiplied by beta 1.
 
 
 ###d.) Use one of the stepwise procedures we talked about, together with computing the generalized R-squared and AIC for each model considered during the process, to arrive at a ‘final’ multiple logistic regression model. Consider interaction terms also.  Interpret the results from your final model in the context of the research question that you are trying to answer.
@@ -246,52 +268,178 @@ cat("##generalized R-squared: ", r2log(m2))
 ```
 
 Interaction terms:
-we will consider the following interaction terms:
-  - pf_rol x pf_ss
-  - pf_rol x pf_movement
-  - pf_ss x pf_movement
-  - pf_rol x pf_ss x pf_movement
+We will again use forward stepwise selection.
 ```{r chunk6, echo=FALSE}
+print("The first model from the last time was based on pf_rol:")
+print("###Model 1:")
+print("##coefficients: ")
+print(rol$coefficients)
+cat("##AIC: ", rol$aic)
+cat("##generalized R-squared: ", r2log(rol))
+print("Now we will regress ef_score_binary with pf_rol and one")
+print("other variable for each other variable (pf_movement and pf_ss).")
+print("p-value rol ss")
+print(coef(summary(glm(ef_score_binary~pf_rol+pf_ss, family = binomial())))[,4])
+print("p-value rol, ss, rol x ss")
+print(coef(summary(glm(ef_score_binary~pf_rol+pf_ss+pf_rol*pf_ss, family = binomial())))[,4])
+print("p-value rol movement")
+print(coef(summary(glm(ef_score_binary~pf_rol+pf_movement, family = binomial())))[,4])
+print("p-value rol, movement, rol x movement")
+print(coef(summary(glm(ef_score_binary~pf_rol+
+          pf_movement+pf_rol*pf_movement, 
+          family = binomial())))[,4])
 
-
+print("pf_rol and pf_movement are the only pair of variables")
+print("that pass the threshold of p<0.05. We throw the others out.")
+print("we are left with pf_movement as the 2nd predictor.")
+print("###Model 2 (final model):")
+m2<-glm(ef_score_binary~pf_rol+pf_movement, family = binomial())
+print("##coefficients: ")
+print(m2$coefficients)
+cat("##AIC: ", m2$aic)
+cat("##generalized R-squared: ", r2log(m2))
 ```
+
+Our research question: Does high political freedom predict high economic freedom?
+ 
+Answer: our final model is the following:
+```{r c7, echo=FALSE}
+coef(summary(m2))
+```
+
+As one can see, for the coefficients preceding both variables (pf_rol and pf_movement), the estimate plus or minus the standard error does not encapsulate 0. This means it is reasonable to say that these coefficients are both positive. This means pf_rol and pf_movement positively predict ef_score_binary. Both variables are only part of political freedom, so we can say only some, not all, aspects of political freedom positively predict economic freedom. Since taking into account interacting terms increases p-values by a lot, we can reasonably say that these individual aspects of political freedom don't interact with each other.
 
 
 ###e.) write a paragraph discussing limitations from your data source, assumptions, approaches etc. as applicable. For those that the grader marked comments about the i.i.d. assumption from week 5 homework, be sure to including discussion on those.
 
-TODO
+The data that we are using is survey data. As such there are some considerations that were made to use this dataset for analysis. Firstly, one of our data points is the average sum of count values. Due to the data not having a zero value and decimal points being not much of a problem in our dataset, we use this datapoint as a continuous variable. This is clearly not ideal, but it should not present too much of an issue. The fact that this datapoint has decimal points is not much of a problem as the decimal points add more information and detail about the dataset at hand. The other large assumption that we are making is the idea that our data is independent. Our data points are academic surveys done on the quality of freedom in the legislation made by the specific country and the execution of that legislation in different countries. The two arguments we make in regards to this data’s independence are: no government can use its legislation power to directly impact the legislation of another sovereign country, and that the decisions of academics regarding the policies of one country are not impacted by decisions that they made on those of other countries. The first argument is certainly weak, as there are many influences between nations, and we are living in a globalized society. However, a very strict interpretation of the question, where we claim independence if and only if there is a direct relationship between one country’s legislation and other countries. That is, if one country can issue legislation that forces the other country to issue its own legislation.  The second point is more solid. Our data is not ground-truth but is rather the perception and analysis of experts and academics regarding the ground-truth data. Unless this study was run irresponsibly, holding the assumption that the experts considered each country independently is reasonable. Finally, as the data points are from a secondary source (professional opinion), the subset of data points that the study chose may not be accurately representing the true metric. For example, our study does a weighted average ~50 individual metrics to determine the political freedom score of the respective country. The actual political freedom of a country may actually consist of 200 or 2000 individual metrics. 
 
 #Week 8:
 ##Part 1:
-###Group 11: TODO
-###Group 12: TODO
+###Group 11:
+First group to provide an outline for how you will cover the entire presentation. A nice way to start and set up your presentation
+
+
+The slides are relatively easy to look at.. It shows what is necessary to convey the information without being too busy
+
+
+Excellent, simple explanation of what insulin is
+
+
+Love the color coding of the variable type (blue for discrete etc.)
+
+
+What is the range of pedigree function? Of BMI values, etc.?
+
+
+Wouldn’t skin fold thickness be closely associated with BMI? The predictors should be independent iirc.
+
+
+The age vs diabetes graph should take into account that there was probably not an equal amount of people in each age range, so the distribution would not be reflective of the likelihood of diabetes in each age group
+
+
+Good thing to mention that high BMI does not = fat, so this is an instance where BMI would not predict type 2 diabetes
+
+
+Glucose level x-axis is too wide, wasted space
+
+
+Your explanation of using all the P-values to evaluate the variable is correct and well explained
+
+
+Good walkthrough of your presentation by explaining how removing a certain variable will affect other variables (e.g AIC example)
+
+
+Make sure to also compute R^2 for logistic regression
+
+
+Watch the timing of your presentation, the timing was informative, but a little slow so your presentation ended up extending for a long time
+
+###Group 12:
+Make sure to fix the errors you had in the presentation slides
+
+
+R2 is not the R2 she talked about in class. It is the linear model, not the logistic model.
+
+ 
+It is a good thing to get typed equations and code in there to relate between the two
+
+
+The presentation was fine, it was just rushed.. Not necessarily your fault because the previous group took too much time
+
+
+Good work explaining different terms and concepts such as interaction terms
+Make sure to be clear on how to select interaction terms
+
+
+There could be a lot of biased because of the multiple taco shops, so you should make sure to account for this potential bias
+
+
+Multiple locations for the same taco shop → correlated ratings, not i.i.d.
+
 ##Part 2:
 ###a) Perform prediction on the whole data set, plot the ROC curve and compute the AUC;
 
-```{r}
+```{r c8, echo=FALSE}
+#formatting issues
+data$ef_score_binary<-ef_score_binary
+data$pf_rol<-pf_rol
+data$pf_ss<-pf_ss
+data$pf_movement<-pf_movement
+data$pf_score<-pf_score
 
+
+print("Plotting ROC of our selected model")
+plot.roc(ef_score_binary, predict(m2, type = "response"))
+print("AUC of our selected model")
+auc(ef_score_binary, predict(m2, type = "response"))
+print("Plotting ROC of all variables (whole data set)")
+all<-glm(ef_score_binary~pf_rol+pf_movement+pf_ss+pf_score, data=data)
+plot.roc(ef_score_binary, predict(all, type = "response"))
+print("AUC of all variables (whole data set)")
+auc(ef_score_binary, predict(all, type = "response"))
 ```
 
 
 ###b) Use a randomly chosen 90% of your observations as training sample to fit the final model (if your data set is too small, you may reduce your final model to a smaller one this week), and use the rest 10% as test sample to compute the out-of-sample AUC;
 
-```{r}
-
+```{r c9, echo=FALSE}
+#m2 = final model from week 7
+train = sample(162, round(162*0.9),replace = FALSE)
+fit = glm(ef_score_binary~pf_rol+pf_movement, family=binomial(),data=data[train,])
+summary(predict(fit, newdata = data[-train,], type = "response"))
+plot.roc(data[-train,]$ef_score_binary, predict(fit,newdata = data[-train,], type = "response"))
+auc(data[-train,]$ef_score_binary, predict(fit, newdata = data[-train,], type = "response"))
 ```
 
 
 ###c) Now instead of test-training sample, carry out 10-fold CV with 10 repetitions to estimate the out-of-sample AUC;
 
-```{r}
-
+```{r c10, echo=FALSE}
+folds <- cvFolds(n = 162, K = 10, R = 1)
+auc = numeric(10)
+for( i in 1:10){
+  train = folds$subsets[folds$which != i]
+  fit = glm(ef_score_binary~pf_rol+pf_movement, family=binomial(),data=data[train,])
+  auc[i]<-auc(data[-train,]$ef_score_binary, predict(fit, newdata = data[-train,], type = "response"))
+}
+print("final AUC:")
+print(mean(auc))
 ```
 
 
 ###d) Comment on your results.
+The AUC of our selected model and our complete model from (a) as well as our cross validation AUC from (c) were all around 0.85 with not too much variance. This means that after training (the 90% of our observations), our model performs with 85% accuracy when working with testing data (the 10% of our observations).
+
+Our AUC from part (b) was around 0.85 but with lots of variation when running it again and again. This was due to the small sample size (16) in the testing data.
+
+For (a), our ROC curves were smooth because we didn't split our data into groups. This made our data have more observations to plot. For (b), they were jagged because of lack of observations.
+
+For (c), since these ROC curves were just (b) repeated, they were also a bunch of jagged edges for each fold.
 
 
 #Code:
 
-```{r ref.label=c("functions","chunk1","chunk2","chunk3","chunk4","chunk5"), echo=TRUE, eval=FALSE}
+```{r ref.label=c("functions","chunk1","chunk2","chunk3","chunk4","chunk6", "c7", "c8", "c9", "c10"), echo=TRUE, eval=FALSE}
 ```
 
