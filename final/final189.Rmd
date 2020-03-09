@@ -9,6 +9,9 @@ output: pdf_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 #Part 1
+Instructions:
+Compile a collection of tips for best data presentation, including the illustration and R script for each
+ TODO: what does she mean for R script and illustration?
 #Part 2
 Instructions:
 For the final project, look back at all the analysis approaches you have used throughout the quarter. Consider HealthGen as the outcome, grouped into Excellent/Vgood, versus Good/Fair/Poor. (In the dataset dat.Rda, the HealthGen variable is assigned value 1 if its original value is Excellent/Vgood and is assigned value 0 otherwise.) Consider all other variables as potential predictors. Develop a comprehensive and reproducible analysis report, to explore the relationship between these variables and the outcome. Pay attention to (but not limited to) the following:
@@ -59,8 +62,17 @@ print("formula:")
 print(formula)
 print("Final model:")
 print(model$coefficients)
-```
 
+
+
+####begin forward stepwise selection
+
+```
+TODO: each caegorical variable has different categories. when doing univariate logistic regression of a categorical variable, glm splits it into its categories and treats each category as a variable. so the regression ends up not being univariate. I assume the way to solve this is to make a variable out of each category of each categorical variable whose value is 1 if the observation belongs to that category and 0 if not. this would take lots of time.
+1.) for screening, do we have to do this?
+2.) for univariate regression in forward stepwise selection, do we have to do this?
+
+actually, another solution is to do backwards stepwise selection with all the variables and wipe out the variables with p>0.05.
 
 ##4.)
 Assess the predictability of the model by computing the (generalized) R-squared and the area under the ROC curve (AUC), as well as the cross-validated AUC.
