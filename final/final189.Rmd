@@ -15,7 +15,7 @@ For the final project, look back at all the analysis approaches you have used th
 
 ##1.)
 Missing data: do not remove observations with any missing data from the start; after screening you might reduce to a smaller set of variables, therefore remove fewer observations at that point. Also you may consider removing variables with too much missing.
-```{r}
+```{r echo = FALSE}
 load("dat (1).rda")
 #remove columns with more than 310 missing
 dat<-dat[,-which(colSums(is.na(dat)) > 310)]
@@ -40,26 +40,120 @@ colnames(dat)[var_indices]
 
 ##2.)
 Include “Table 1”
-```{r}
-#do later.
+```{r echo = FALSE, eval=FALSE}
+knitr::kable(mtcars[1:5,])
+table1<-data.frame(numeric(10))
+rownames(table1) <- colnames(dat)[var_indices]
 ```
 
 
 ##3.)
 After univariate screening, building a multiple logistic regression model to predict the general health outcome of very good or excellent versus otherwise. State clearly your criteria at each step in the narrative.
-```{r}
-
+```{r echo = FALSE}
+#first remove rows with missing data:
+keep_rows<-which(rowSums(is.na(dat[,c(var_indices,8)]))==0)
+dat<-dat[keep_rows,]
+formula<-paste("HealthGen~", paste(colnames(dat)[var_indices], collapse = '+'), sep="")
+model<-glm(formula, family=binomial(), data = dat)
+print("formula:")
+print(formula)
+print("Final model:")
+print(model$coefficients)
 ```
 
 
 ##4.)
 Assess the predictability of the model by computing the (generalized) R-squared and the area under the ROC curve (AUC), as well as the cross-validated AUC.
 
+```{r echo = FALSE, message=FALSE, warning=FALSE}
+### cehcking stuff
+#how many rows have no missing?
+sum(rowSums(is.na(dat[,var_indices]))==0)
+#how many observations are used in model?
+nobs(model)
+#how many observations total?
+nrow(dat)
+```
+
+
+Find generalized R-squared:
+```{r echo = FALSE}
+r2log<-function(glm_obj) {
+  glm_null<-glm(HealthGen~1, family = binomial(), data = dat)
+  #likelihood ratio test statistic
+  t<-2*(logLik(glm_obj)-logLik(glm_null))/nobs(glm_obj)
+  r2<-1-exp(-t)
+  return(r2)
+}
+cat("##generalized R-squared: ", r2log(model))
+```
+
+
+ROC and AUC
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+#install.packages("pROC")
+library(pROC)
+#install.packages("cvTools")
+library(cvTools)
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+print("Plotting ROC of our selected model")
+plot.roc(dat$HealthGen, predict(model, type = "response"))
+auc<-auc(dat$HealthGen, predict(model, type = "response"))
+```
+
+
+```{r echo = FALSE}
+print("AUC of our selected model")
+print(auc)
+```
+
+Cross-validated ROC and AUC
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+folds <- cvFolds(n = nrow(dat), K = 10, R = 1)
+auc = numeric(10)
+for( i in 1:10){
+  train = folds$subsets[folds$which != i]
+  fit = glm(formula, family=binomial(), data=dat[train,])
+  auc[i]<-auc(dat[-train,]$HealthGen, predict(fit, newdata = dat[-train,], type = "response"))
+}
+```
+
+
+```{r echo = FALSE}
+print("final AUC:")
+print(mean(auc))
+```
+
+
 ##5.)
 Use the variables that have passed the univariate screening, to build a classification tree. Describe clearly how you arrive at the final tree. Compute the error rate of your classification tree.
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+require(rpart)
+require(tree)
+require(aplore3)
+```
+
+
+```{r echo = FALSE}
+train=sample.int(nrow(dat),floor(nrow(dat)*0.8))
+fit=rpart(formula, data = dat, subset=train)
+par(mfrow = c(1,2), xpd = NA)
+plot(fit)
+text(fit, pretty=0)
+plot(fit)
+text(fit, pretty=0, use.n = TRUE)
+dev.off()
+printcp(fit)
+```
+
+
 ##6.)
 Discuss any limitations in the analysis.
+
 
 ##Bonus
 Explore random forest on the data above.
