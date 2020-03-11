@@ -11,31 +11,111 @@ knitr::opts_chunk$set(echo = TRUE)
 #Part 1
 Instructions:
 Compile a collection of tips for best data presentation, including the illustration and R script for each
- TODO: what does she mean for R script and illustration?
+ TODO: what does she mean for R script and illustration? resolved
+ one should boxplot next to each other --> provide sample code how that's done
+ use Rmd, show R code and plot.
 #Part 2
 Instructions:
 For the final project, look back at all the analysis approaches you have used throughout the quarter. Consider HealthGen as the outcome, grouped into Excellent/Vgood, versus Good/Fair/Poor. (In the dataset dat.Rda, the HealthGen variable is assigned value 1 if its original value is Excellent/Vgood and is assigned value 0 otherwise.) Consider all other variables as potential predictors. Develop a comprehensive and reproducible analysis report, to explore the relationship between these variables and the outcome. Pay attention to (but not limited to) the following:
 
 ##1.)
 Missing data: do not remove observations with any missing data from the start; after screening you might reduce to a smaller set of variables, therefore remove fewer observations at that point. Also you may consider removing variables with too much missing.
-```{r echo = FALSE}
+```{r}
 load("dat (1).rda")
 #remove columns with more than 310 missing
-dat<-dat[,-which(colSums(is.na(dat)) > 310)]
-#screening with univariate regression
-screen<-function(var) {
-  no_miss<-which(!is.na(var)& !is.na(dat$HealthGen))
-  m<-glm(dat$HealthGen[no_miss]~var[no_miss], family = binomial())
-  #true if p value < 0.05
-  return(coef(summary(m))[2,4]<0.05)
+#TODO not hard
+#TODO: get rid of categories with 0
+dat<-dat[,-which(colSums(is.na(dat)) > 1457)]
+#first combine categories:
+#put mexican under hispanic
+dat$Race1[which(dat$Race1=="Mexican")]<-"Hispanic"
+#split education into above or below high school grad
+levels(dat$Education)<-c(levels(dat$Education), "HS_or_less", "college_or_more")
+dat$Education[which(dat$Education=="8th Grade" |dat$Education=="9 - 11th Grade"|dat$Education=="High School")]<-"HS_or_less"
+dat$Education[which(dat$Education=="Some College" |dat$Education=="College Grad")]<-"college_or_more"
+#split marital status into the following: (live partner, married), (divorced,separated), (widowed, never married)
+levels(dat$MaritalStatus)<-c(levels(dat$MaritalStatus), "have_SO")
+dat$MaritalStatus[c(which(dat$MaritalStatus=="LivePartner"), which(dat$MaritalStatus=="Married"))]<-"have_SO"
+#below mean vs above median income (55000)
+levels(dat$HHIncome)<-c(levels(dat$HHIncome), "below_med", "above_med")
+below_med<-levels(dat$HHIncome)[1:9]
+above_med<-levels(dat$HHIncome)[10:12]
+dat$HHIncome[which(dat$HHIncome %in% below_med)]<-"below_med"
+dat$HHIncome[which(dat$HHIncome %in% above_med)]<-"above_med"
+
+#BMI: combine underweight with normal
+levels(dat$BMI_WHO)<-c("12.0_to_24.9",levels(dat$BMI_WHO))
+dat$BMI_WHO[c(which(dat$BMI_WHO == "12.0_18.5"),which(dat$BMI_WHO == "18.5_to_24.9"))]<-"12.0_to_24.9"
+#depressed: combine several with most
+levels(dat$Depressed)<-c(levels(dat$Depressed), "Lots")
+dat$Depressed[c(which(dat$Depressed=="Several"),which(dat$Depressed=="Most"))]<-"Lots"
+#comp hrs day: categories: (0,1) (2,+)
+levels(dat$CompHrsDay)<-c(levels(dat$CompHrsDay), "one_or_less", "two_or_more")
+one_or_less<-levels(dat$CompHrsDay)[1:3]
+two_or_more<-levels(dat$CompHrsDay)[4:7]
+dat$CompHrsDay[which(dat$CompHrsDay %in% one_or_less)]<-"one_or_less"
+dat$CompHrsDay[which(dat$CompHrsDay %in% two_or_more)]<-"two_or_more"
+
+#TV hrs day: categories: (0,1) (2,+)
+levels(dat$TVHrsDay)<-c(levels(dat$TVHrsDay), "one_or_less", "two_or_more")
+dat$TVHrsDay[which(dat$TVHrsDay %in% one_or_less)]<-"one_or_less"
+dat$TVHrsDay[which(dat$TVHrsDay %in% two_or_more)]<-"two_or_more"
+
+#sex orient: hetero vs other
+levels(dat$SexOrientation)<-c(levels(dat$SexOrientation), "Other")
+dat$SexOrientation[c(which(dat$SexOrientation=="Bisexual"),which(dat$SexOrientation=="Homosexual"))]<-"Other"
+
+for(i in 1:ncol(dat)){
+  if(class(dat[,i])=="factor"){
+    print(colnames(dat)[i])
+    print(table(dat[,i])/length(dat[,i]))
+  }
 }
-var_indices<-which(colnames(dat) !="HealthGen")
+```
+
+
+```{r echo = FALSE}
+#screening with univariate regression
+
+
+#puts the class of each column in df into an array
+classify<-function(df) {
+  #run thru columns
+  array<-character(ncol(df))
+  for (i in 1:ncol(df)){
+    array[i]<-class(df[,i])
+  }
+  return(array)
+}
+
+#returns TRUE if ith column of dat passes the screening 
+screen<-function(i) {
+  var = dat[,i]
+  no_miss<-which(!is.na(var)& !is.na(dat$HealthGen))
+  p=1
+  m<-glm(dat$HealthGen[no_miss]~var[no_miss], family = binomial())
+  if(classify(dat)[i] == "integer"){
+    p = coef(summary(m))[2,4]
+  } else {
+    #TODO: is this method of screening correct?
+    p=anova(m, test = "LRT")[2,5]
+  }
+  return(p<0.2)
+}
+
+for(i in 1:ncol(dat)){
+  print(screen(i))
+}
+
 #screen each column of dat excluding HealthGen
+var_indices<-which(colnames(dat) !="HealthGen")
 for (i in var_indices) {
-  if(!screen(dat[,i])) {
+  if(!screen(i)) {
     var_indices<-var_indices[which(var_indices!=i)]
   }
 }
+
+
 print("our final screened variables:")
 colnames(dat)[var_indices]
 ```
@@ -71,6 +151,8 @@ print(model$coefficients)
 TODO: each caegorical variable has different categories. when doing univariate logistic regression of a categorical variable, glm splits it into its categories and treats each category as a variable. so the regression ends up not being univariate. I assume the way to solve this is to make a variable out of each category of each categorical variable whose value is 1 if the observation belongs to that category and 0 if not. this would take lots of time.
 1.) for screening, do we have to do this?
 2.) for univariate regression in forward stepwise selection, do we have to do this?
+
+after viewing the presentations, it looks like the second group made the continuous variables into binary. should we do this?
 
 actually, another solution is to do backwards stepwise selection with all the variables and wipe out the variables with p>0.05.
 
