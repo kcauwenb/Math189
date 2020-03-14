@@ -20,51 +20,67 @@ For the final project, look back at all the analysis approaches you have used th
 
 ##1.)
 Missing data: do not remove observations with any missing data from the start; after screening you might reduce to a smaller set of variables, therefore remove fewer observations at that point. Also you may consider removing variables with too much missing.
+
+
+
+First step: remove the two columns that have missing data for more than half its observations
 ```{r}
 load("dat (1).rda")
-#remove columns with more than 310 missing
-#TODO not hard
-#TODO: get rid of categories with 0
-dat<-dat[,-which(colSums(is.na(dat)) > 1457)]
+#remove columns with more than half the observations missing
+dat<-dat[,-which(colSums(is.na(dat)) > nrow(dat)/2)]
+```
+
+
+Second step: for all categorical variables, reduce the number of categories by combining sparse categories
+```{r echo = FALSE, message=FALSE, warning=FALSE}
 #first combine categories:
 #put mexican under hispanic
 dat$Race1[which(dat$Race1=="Mexican")]<-"Hispanic"
+dat$Race1<-factor(dat$Race1)
 #split education into above or below high school grad
 levels(dat$Education)<-c(levels(dat$Education), "HS_or_less", "college_or_more")
 dat$Education[which(dat$Education=="8th Grade" |dat$Education=="9 - 11th Grade"|dat$Education=="High School")]<-"HS_or_less"
 dat$Education[which(dat$Education=="Some College" |dat$Education=="College Grad")]<-"college_or_more"
-#split marital status into the following: (live partner, married), (divorced,separated), (widowed, never married)
-levels(dat$MaritalStatus)<-c(levels(dat$MaritalStatus), "have_SO")
-dat$MaritalStatus[c(which(dat$MaritalStatus=="LivePartner"), which(dat$MaritalStatus=="Married"))]<-"have_SO"
-#below mean vs above median income (55000)
+dat$Education<-factor(dat$Education)
+#split marital status into the following: (live partner, married), (divorced,separated, widowed), (never married)
+levels(dat$MaritalStatus)<-c(levels(dat$MaritalStatus), "Together")
+dat$MaritalStatus[c(which(dat$MaritalStatus=="LivePartner"), which(dat$MaritalStatus=="Married"))]<-"Together"
+dat$MaritalStatus[c(which(dat$MaritalStatus=="Widowed"), which(dat$MaritalStatus=="Divorced"))]<-"Separated"
+dat$MaritalStatus<-factor(dat$MaritalStatus)
+#below mean vs above median income (65000)
 levels(dat$HHIncome)<-c(levels(dat$HHIncome), "below_med", "above_med")
 below_med<-levels(dat$HHIncome)[1:9]
 above_med<-levels(dat$HHIncome)[10:12]
 dat$HHIncome[which(dat$HHIncome %in% below_med)]<-"below_med"
 dat$HHIncome[which(dat$HHIncome %in% above_med)]<-"above_med"
-
+dat$HHIncome<-factor(dat$HHIncome)
 #BMI: combine underweight with normal
 levels(dat$BMI_WHO)<-c("12.0_to_24.9",levels(dat$BMI_WHO))
 dat$BMI_WHO[c(which(dat$BMI_WHO == "12.0_18.5"),which(dat$BMI_WHO == "18.5_to_24.9"))]<-"12.0_to_24.9"
+dat$BMI_WHO<-factor(dat$BMI_WHO)
 #depressed: combine several with most
 levels(dat$Depressed)<-c(levels(dat$Depressed), "Lots")
 dat$Depressed[c(which(dat$Depressed=="Several"),which(dat$Depressed=="Most"))]<-"Lots"
+dat$Depressed<-factor(dat$Depressed)
 #comp hrs day: categories: (0,1) (2,+)
 levels(dat$CompHrsDay)<-c(levels(dat$CompHrsDay), "one_or_less", "two_or_more")
 one_or_less<-levels(dat$CompHrsDay)[1:3]
 two_or_more<-levels(dat$CompHrsDay)[4:7]
 dat$CompHrsDay[which(dat$CompHrsDay %in% one_or_less)]<-"one_or_less"
 dat$CompHrsDay[which(dat$CompHrsDay %in% two_or_more)]<-"two_or_more"
-
+dat$CompHrsDay<-factor(dat$CompHrsDay)
 #TV hrs day: categories: (0,1) (2,+)
 levels(dat$TVHrsDay)<-c(levels(dat$TVHrsDay), "one_or_less", "two_or_more")
 dat$TVHrsDay[which(dat$TVHrsDay %in% one_or_less)]<-"one_or_less"
 dat$TVHrsDay[which(dat$TVHrsDay %in% two_or_more)]<-"two_or_more"
-
+dat$TVHrsDay<-factor(dat$TVHrsDay)
 #sex orient: hetero vs other
 levels(dat$SexOrientation)<-c(levels(dat$SexOrientation), "Other")
 dat$SexOrientation[c(which(dat$SexOrientation=="Bisexual"),which(dat$SexOrientation=="Homosexual"))]<-"Other"
+dat$SexOrientation<-factor(dat$SexOrientation)
+```
 
+```{r eval=FALSE}
 for(i in 1:ncol(dat)){
   if(class(dat[,i])=="factor"){
     print(colnames(dat)[i])
@@ -74,13 +90,11 @@ for(i in 1:ncol(dat)){
 ```
 
 
+
+Third step: Univariately screen all the remaining predictors and get rid of those whose p-value > 0.2.
 ```{r echo = FALSE}
-#screening with univariate regression
-
-
 #puts the class of each column in df into an array
 classify<-function(df) {
-  #run thru columns
   array<-character(ncol(df))
   for (i in 1:ncol(df)){
     array[i]<-class(df[,i])
@@ -97,25 +111,19 @@ screen<-function(i) {
   if(classify(dat)[i] == "integer"){
     p = coef(summary(m))[2,4]
   } else {
-    #TODO: is this method of screening correct?
-    p=anova(m, test = "LRT")[2,5]
+    null<-glm(dat$HealthGen[no_miss]~1, family = binomial())
+    p=anova(null, m, test = "LRT")[2,5]
   }
   return(p<0.2)
 }
 
-for(i in 1:ncol(dat)){
-  print(screen(i))
-}
-
-#screen each column of dat excluding HealthGen
+#screen each column of dat excluding HealthGen. Generate a vector representing indices of variables we want to keep
 var_indices<-which(colnames(dat) !="HealthGen")
 for (i in var_indices) {
   if(!screen(i)) {
     var_indices<-var_indices[which(var_indices!=i)]
   }
 }
-
-
 print("our final screened variables:")
 colnames(dat)[var_indices]
 ```
@@ -132,43 +140,55 @@ rownames(table1) <- colnames(dat)[var_indices]
 
 ##3.)
 After univariate screening, building a multiple logistic regression model to predict the general health outcome of very good or excellent versus otherwise. State clearly your criteria at each step in the narrative.
+
+General algorithm: TODO
+
+At each step, we will keep track of the inidces of the variables
 ```{r echo = FALSE}
-#first remove rows with missing data:
+#first, remove all observations with any missing data
 keep_rows<-which(rowSums(is.na(dat[,c(var_indices,8)]))==0)
 dat<-dat[keep_rows,]
-formula<-paste("HealthGen~", paste(colnames(dat)[var_indices], collapse = '+'), sep="")
-model<-glm(formula, family=binomial(), data = dat)
-print("formula:")
-print(formula)
-print("Final model:")
-print(model$coefficients)
 
+#given indices of predictors, returns a formula regressing HealthGen against the predictors to be put into glm
+form<-function(ind){
+  paste("HealthGen~", paste(colnames(dat)[ind], collapse = '+'), sep="")
+}
 
-
-####begin forward stepwise selection
-
+BSS<-function(ind) {
+  num_iter<-0
+  AIC<-NULL
+  R2<-NULL
+  while(length(ind)>1){
+    num_iter<-num_iter+1
+    #start with full model
+    m<-glm(form(ind), family=binomial(), data = dat)
+    #compare it to all models that are like the full model, but with one variable removed
+    #one p value for each temp model
+    p<-numeric(length(ind))
+    for(i in ind) {
+      f<-form(ind[-which(ind==i)])
+      if(length(ind)==1) {f<- "HealthGen~1"}
+      m_temp<-glm(f, family=binomial(), data = dat)
+      p[which(ind == i)]<-anova(m, m_temp, test = "LRT")[2,5]
+    }
+    cat("\np: ",p)
+    if(sum(p>0.05)>0){
+      ind<-ind[which(p<0.05)]
+    } else {
+      return(ind)
+    }
+    cat("\n\nind: ", ind)
+  }
+  return(ind)
+}
+#our final selected model
+new_ind<-BSS(var_indices)
+model<-glm(form(new_ind), family = binomial(), data = dat)
 ```
-TODO: each caegorical variable has different categories. when doing univariate logistic regression of a categorical variable, glm splits it into its categories and treats each category as a variable. so the regression ends up not being univariate. I assume the way to solve this is to make a variable out of each category of each categorical variable whose value is 1 if the observation belongs to that category and 0 if not. this would take lots of time.
-1.) for screening, do we have to do this?
-2.) for univariate regression in forward stepwise selection, do we have to do this?
 
-after viewing the presentations, it looks like the second group made the continuous variables into binary. should we do this?
-
-actually, another solution is to do backwards stepwise selection with all the variables and wipe out the variables with p>0.05.
 
 ##4.)
 Assess the predictability of the model by computing the (generalized) R-squared and the area under the ROC curve (AUC), as well as the cross-validated AUC.
-
-```{r echo = FALSE, message=FALSE, warning=FALSE}
-### cehcking stuff
-#how many rows have no missing?
-sum(rowSums(is.na(dat[,var_indices]))==0)
-#how many observations are used in model?
-nobs(model)
-#how many observations total?
-nrow(dat)
-```
-
 
 Find generalized R-squared:
 ```{r echo = FALSE}
@@ -210,7 +230,7 @@ folds <- cvFolds(n = nrow(dat), K = 10, R = 1)
 auc = numeric(10)
 for( i in 1:10){
   train = folds$subsets[folds$which != i]
-  fit = glm(formula, family=binomial(), data=dat[train,])
+  fit = glm(form(new_ind), family = binomial(), data = dat)
   auc[i]<-auc(dat[-train,]$HealthGen, predict(fit, newdata = dat[-train,], type = "response"))
 }
 ```
@@ -226,15 +246,16 @@ print(mean(auc))
 Use the variables that have passed the univariate screening, to build a classification tree. Describe clearly how you arrive at the final tree. Compute the error rate of your classification tree.
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-require(rpart)
-require(tree)
-require(aplore3)
+library(rpart)
+library(tree)
+library(aplore3)
 ```
 
 
 ```{r echo = FALSE}
+#model
 train=sample.int(nrow(dat),floor(nrow(dat)*0.8))
-fit=rpart(formula, data = dat, subset=train)
+fit=rpart(form(new_ind), data = dat, subset=train)
 par(mfrow = c(1,2), xpd = NA)
 plot(fit)
 text(fit, pretty=0)
@@ -251,4 +272,8 @@ Discuss any limitations in the analysis.
 
 ##Bonus
 Explore random forest on the data above.
+```{r}
+
+```
+
 
