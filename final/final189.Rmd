@@ -252,17 +252,27 @@ library(aplore3)
 ```
 
 
+Approach 1:
 ```{r echo = FALSE}
 #model
 train=sample.int(nrow(dat),floor(nrow(dat)*0.8))
 fit=rpart(form(new_ind), data = dat, subset=train)
 par(mfrow = c(1,2), xpd = NA)
 plot(fit)
-text(fit, pretty=0)
-plot(fit)
 text(fit, pretty=0, use.n = TRUE)
 dev.off()
 printcp(fit)
+```
+Approach 2:
+```{r}
+
+```
+
+
+
+Testing error
+```{r}
+
 ```
 
 
