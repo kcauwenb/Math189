@@ -205,9 +205,9 @@ cat("##generalized R-squared: ", r2log(model))
 
 ROC and AUC
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-#install.packages("pROC")
+install.packages("pROC")
 library(pROC)
-#install.packages("cvTools")
+install.packages("cvTools")
 library(cvTools)
 ```
 
@@ -255,10 +255,24 @@ library(aplore3)
 Approach 1:
 ```{r echo = FALSE}
 #model
+plot.new()
 train=sample.int(nrow(dat),floor(nrow(dat)*0.8))
 fit=rpart(form(new_ind), data = dat, subset=train)
-par(mfrow = c(1,2), xpd = NA)
 plot(fit)
+<<<<<<< HEAD
+=======
+a<- text(fit, use.n = TRUE)
+
+```
+```{r}
+
+
+par(mfrow = c(1,2), xpd = NA)
+plot.new()
+text(fit, pretty=0)
+plot(fit)
+plot(fit)
+>>>>>>> f675e9a1f8b804fa4bca58ee8458a83ecda0871b
 text(fit, pretty=0, use.n = TRUE)
 dev.off()
 printcp(fit)
