@@ -205,9 +205,9 @@ cat("##generalized R-squared: ", r2log(model))
 
 ROC and AUC
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
-install.packages("pROC")
+#install.packages("pROC")
 library(pROC)
-install.packages("cvTools")
+#install.packages("cvTools")
 library(cvTools)
 ```
 
@@ -255,38 +255,38 @@ library(aplore3)
 Approach 1:
 ```{r echo = FALSE}
 #model
+par(mfrow = c(1,1), xpd = NA)
 plot.new()
 train=sample.int(nrow(dat),floor(nrow(dat)*0.8))
-fit=rpart(form(new_ind), data = dat, subset=train)
+# we want our initial tree to be really deep so we have more to cut down
+fit=rpart(form(new_ind), data = dat, subset=train, cp=0.000000000002)
 plot(fit)
-<<<<<<< HEAD
-=======
 a<- text(fit, use.n = TRUE)
-
 ```
+
 ```{r}
-
-
-par(mfrow = c(1,2), xpd = NA)
-plot.new()
-text(fit, pretty=0)
-plot(fit)
-plot(fit)
->>>>>>> f675e9a1f8b804fa4bca58ee8458a83ecda0871b
-text(fit, pretty=0, use.n = TRUE)
-dev.off()
 printcp(fit)
 ```
-Approach 2:
+
+
+Select the optimal CP
 ```{r}
-
+optimal_CP=fit$cptable[min(which(fit$cptable[,"xerror"]<=min(fit$cptable[,"xerror"])+fit$cptable[,"xstd"])),"CP"]
+optimal_CP<-0.0000000000000001
+pruned_fit=prune(fit, cp=optimal_CP)
+par(mfrow = c(1,1), xpd = NA)
+plot(pruned_fit)
+text(pruned_fit, pretty=0, use.n = TRUE)
+pruned_fit 
 ```
-
 
 
 Testing error
 ```{r}
-
+predict_table2=table(predict(pruned_fit,newdata=dat[-train,],type="class"),dat$HealthGen[-train])
+err_test2=1-sum(diag(predict_table2))/sum(predict_table2) #the testing error 
+err_test_guess=min(prop.table(table(dat$HealthGen[-train]))) #the testing error of a majority voting
+err_test2/err_test_guess
 ```
 
 
